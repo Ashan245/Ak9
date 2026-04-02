@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PrintFlow Pro — Printing Shop SaaS</title>
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- Font Awesome 6 -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet" />
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <!-- Custom CSS -->
+  <link href="style.css" rel="stylesheet" />
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════
+     AUTH OVERLAY (shown when not logged in)
+═══════════════════════════════════════════════════ -->
+<div id="auth-overlay" class="auth-overlay">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <i class="fa-solid fa-print"></i>
+      <span>PrintFlow<strong>Pro</strong></span>
+    </div>
+    <p class="auth-subtitle">Multi-Tenant Printing Shop Management Platform</p>
+
+    <!-- Login Form -->
+    <div id="login-panel">
+      <h5 class="mb-4">Sign in to your shop</h5>
+      <div class="mb-3">
+        <label class="form-label small text-muted">Email Address</label>
+        <div class="input-icon-wrap">
+          <i class="fa-solid fa-envelope"></i>
+          <input type="email" id="login-email" class="form-control pf-input" placeholder="owner@shop.com" />
+        </div>
+      </div>
+      <div class="mb-4">
+        <label class="form-label small text-muted">Password</label>
+        <div class="input-icon-wrap">
+          <i class="fa-solid fa-lock"></i>
+          <input type="password" id="login-password" class="form-control pf-input" placeholder="••••••••" />
+        </div>
+      </div>
+      <button id="btn-login" class="btn pf-btn-primary w-100 mb-3">
+        <i class="fa-solid fa-arrow-right-to-bracket me-2"></i> Sign In
+      </button>
+      <p class="text-center small text-muted">
+        New shop? <a href="#" id="go-register" class="pf-link">Create an account</a>
+      </p>
+      <div id="auth-error" class="alert alert-danger d-none mt-3 py-2 small"></div>
+    </div>
+
+    <!-- Register Form -->
+    <div id="register-panel" class="d-none">
+      <h5 class="mb-4">Register your shop</h5>
+      <div class="mb-3">
+        <label class="form-label small text-muted">Shop Name</label>
+        <div class="input-icon-wrap">
+          <i class="fa-solid fa-store"></i>
+          <input type="text" id="reg-shopname" class="form-control pf-input" placeholder="e.g. Colombo Prints" />
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label small text-muted">Owner Email</label>
+        <div class="input-icon-wrap">
+          <i class="fa-solid fa-envelope"></i>
+          <input type="email" id="reg-email" class="form-control pf-input" placeholder="you@example.com" />
+        </div>
+      </div>
+      <div class="mb-4">
+        <label class="form-label small text-muted">Password</label>
+        <div class="input-icon-wrap">
+          <i class="fa-solid fa-lock"></i>
+          <input type="password" id="reg-password" class="form-control pf-input" placeholder="Min 6 characters" />
+        </div>
+      </div>
+      <button id="btn-register" class="btn pf-btn-primary w-100 mb-3">
+        <i class="fa-solid fa-shop me-2"></i> Create Shop Account
+      </button>
+      <p class="text-center small text-muted">
+        Already registered? <a href="#" id="go-login" class="pf-link">Sign in</a>
+      </p>
+      <div id="reg-error" class="alert alert-danger d-none mt-3 py-2 small"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     MAIN APP (hidden until logged in)
+═══════════════════════════════════════════════════ -->
+<div id="app" class="d-none">
+
+  <!-- ── SIDEBAR ─────────────────────────────────── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <i class="fa-solid fa-print"></i>
+      <span>PrintFlow<strong>Pro</strong></span>
+    </div>
+
+    <div class="shop-badge" id="sidebar-shop-badge">
+      <i class="fa-solid fa-store-slash"></i>
+      <span id="sidebar-shop-name">Loading…</span>
+      <small id="sidebar-tier" class="tier-badge">FREE</small>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item active" data-section="dashboard">
+        <i class="fa-solid fa-gauge-high"></i><span>Dashboard</span>
+      </a>
+      <a href="#" class="nav-item" data-section="new-order">
+        <i class="fa-solid fa-plus-circle"></i><span>New Order</span>
+      </a>
+      <a href="#" class="nav-item" data-section="orders">
+        <i class="fa-solid fa-layer-group"></i><span>All Orders</span>
+      </a>
+      <a href="#" class="nav-item" data-section="pricing">
+        <i class="fa-solid fa-calculator"></i><span>AI Pricing</span>
+      </a>
+      <a href="#" class="nav-item" data-section="ledger">
+        <i class="fa-solid fa-book-open"></i><span>Ledger</span>
+      </a>
+      <a href="#" class="nav-item" data-section="settings">
+        <i class="fa-solid fa-gear"></i><span>Settings</span>
+      </a>
+      <a href="#" class="nav-item" data-section="staff">
+        <i class="fa-solid fa-users-gear"></i><span>Staff</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="user-avatar" id="user-avatar-initials">--</div>
+        <div>
+          <div class="user-email" id="user-email-label">Loading…</div>
+          <div class="user-role" id="user-role">Shop Owner</div>
+        </div>
+      </div>
+      <button id="btn-logout" class="btn btn-sm logout-btn" title="Sign Out">
+        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ── MAIN CONTENT ────────────────────────────── -->
+  <main class="main-content">
+
+    <!-- Top Bar -->
+    <div class="topbar">
+      <button class="sidebar-toggle d-lg-none" id="sidebar-toggle">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <div class="topbar-actions">
+        <div class="status-dot online"></div>
+        <span class="small text-muted">Live</span>
+        <span class="badge pf-badge ms-3" id="topbar-date"></span>
+      </div>
+    </div>
+
+    <!-- ══ SECTION: DASHBOARD ══ -->
+    <section id="section-dashboard" class="content-section active">
+      <div class="section-header">
+        <h2>Dashboard Overview</h2>
+        <p class="text-muted">Welcome back! Here's your shop's performance at a glance.</p>
+      </div>
+
+      <!-- Stat Cards -->
+      <div class="row g-4 mb-4">
+        <div class="col-6 col-xl-3">
+          <div class="stat-card stat-blue">
+            <div class="stat-icon"><i class="fa-solid fa-inbox"></i></div>
+            <div class="stat-val" id="stat-total">—</div>
+            <div class="stat-label">Total Orders</div>
+          </div>
+        </div>
+        <div class="col-6 col-xl-3">
+          <div class="stat-card stat-amber">
+            <div class="stat-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+            <div class="stat-val" id="stat-pending">—</div>
+            <div class="stat-label">Pending</div>
+          </div>
+        </div>
+        <div class="col-6 col-xl-3">
+          <div class="stat-card stat-cyan">
+            <div class="stat-icon"><i class="fa-solid fa-print"></i></div>
+            <div class="stat-val" id="stat-printing">—</div>
+            <div class="stat-label">In Printing</div>
+          </div>
+        </div>
+        <div class="col-6 col-xl-3">
+          <div class="stat-card stat-green">
+            <div class="stat-icon"><i class="fa-solid fa-circle-check"></i></div>
+            <div class="stat-val" id="stat-completed">—</div>
+            <div class="stat-label">Completed</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Orders Quick Table -->
+      <div class="pf-card">
+        <div class="pf-card-header">
+          <span><i class="fa-solid fa-clock me-2 text-accent"></i>Recent Orders</span>
+          <a href="#" class="pf-link small" data-section="orders">View All</a>
+        </div>
+        <div class="table-responsive">
+          <table class="table pf-table mb-0">
+            <thead>
+              <tr>
+                <th>Customer</th><th>Type</th><th>Status</th><th>Credit (LKR)</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="recent-orders-tbody">
+              <tr><td colspan="5" class="text-center text-muted py-4">Loading recent orders…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SECTION: NEW ORDER ══ -->
+    <section id="section-new-order" class="content-section">
+      <div class="section-header">
+        <h2><i class="fa-solid fa-plus-circle me-2 text-accent"></i>Add New Order</h2>
+        <p class="text-muted">Fill in customer details and upload the design file.</p>
+      </div>
+
+      <div class="row g-4">
+        <div class="col-lg-7">
+          <div class="pf-card">
+            <div class="pf-card-header"><span>Order Details</span></div>
+            <div class="pf-card-body">
+
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Customer Name <span class="text-danger">*</span></label>
+                  <input type="text" id="ord-customer" class="form-control pf-input" placeholder="Full name" />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Phone Number <span class="text-danger">*</span></label>
+                  <input type="tel" id="ord-phone" class="form-control pf-input" placeholder="+94 7X XXX XXXX" />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Order Type <span class="text-danger">*</span></label>
+                  <select id="ord-type" class="form-select pf-input">
+                    <option value="">— Select Type —</option>
+                    <option value="Stickers">🏷️ Stickers</option>
+                    <option value="Badges">📛 Badges</option>
+                    <option value="Flex">🖼️ Flex Banner</option>
+                    <option value="Photocopy">📄 Photocopy</option>
+                    <option value="Business Cards">💼 Business Cards</option>
+                    <option value="Brochure">📋 Brochure</option>
+                    <option value="T-Shirt Print">👕 T-Shirt Print</option>
+                    <option value="Custom">✏️ Custom</option>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Quantity</label>
+                  <input type="number" id="ord-qty" class="form-control pf-input" placeholder="e.g. 500" min="1" />
+                </div>
+                <div class="col-12">
+                  <label class="form-label">Order Notes</label>
+                  <textarea id="ord-notes" class="form-control pf-input" rows="3" placeholder="Special instructions, dimensions, color preferences…"></textarea>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Credit Amount (LKR)</label>
+                  <div class="input-icon-wrap">
+                    <i class="fa-solid fa-coins"></i>
+                    <input type="number" id="ord-credit" class="form-control pf-input" placeholder="Outstanding balance" min="0" />
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Advance Paid (LKR)</label>
+                  <div class="input-icon-wrap">
+                    <i class="fa-solid fa-money-bill-wave"></i>
+                    <input type="number" id="ord-advance" class="form-control pf-input" placeholder="Amount received" min="0" />
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-5">
+          <div class="pf-card h-100">
+            <div class="pf-card-header"><span>Design File Upload</span></div>
+            <div class="pf-card-body">
+              <div class="file-drop-zone" id="file-drop-zone">
+                <i class="fa-solid fa-cloud-arrow-up drop-icon"></i>
+                <p class="mt-2 mb-1">Drag & drop your file here</p>
+                <p class="small text-muted">Supports PSD, CDR, PDF, PNG, AI (max 50MB)</p>
+                <input type="file" id="ord-file" class="d-none" accept=".psd,.cdr,.pdf,.png,.jpg,.ai,.eps" />
+                <button class="btn pf-btn-outline mt-2" onclick="document.getElementById('ord-file').click()">
+                  <i class="fa-solid fa-folder-open me-2"></i>Browse File
+                </button>
+              </div>
+              <div id="file-info" class="file-info-box d-none">
+                <i class="fa-solid fa-file-circle-check text-accent"></i>
+                <span id="file-name-label">filename.pdf</span>
+                <button class="btn btn-sm btn-link text-danger p-0" id="btn-clear-file">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+
+              <!-- Upload Progress -->
+              <div id="upload-progress-wrap" class="mt-3 d-none">
+                <div class="d-flex justify-content-between small mb-1">
+                  <span>Uploading…</span>
+                  <span id="upload-pct">0%</span>
+                </div>
+                <div class="progress pf-progress">
+                  <div id="upload-bar" class="progress-bar" style="width:0%"></div>
+                </div>
+              </div>
+
+              <div class="mt-4 p-3 note-box">
+                <i class="fa-solid fa-shield-halved text-accent me-2"></i>
+                <small>Files are encrypted and stored in Firebase Storage. Each shop's files are isolated from others.</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <div class="text-end mt-4">
+        <button class="btn pf-btn-ghost me-2" id="btn-clear-form">
+          <i class="fa-solid fa-rotate-left me-2"></i>Clear Form
+        </button>
+        <button class="btn pf-btn-primary px-5" id="btn-submit-order">
+          <i class="fa-solid fa-paper-plane me-2"></i>Submit Order
+        </button>
+      </div>
+
+      <!-- Success Alert -->
+      <div id="order-success" class="alert pf-alert-success d-none mt-3">
+        <i class="fa-solid fa-circle-check me-2"></i>
+        Order saved successfully! File uploaded to Firebase Storage.
+      </div>
+      <div id="order-error" class="alert pf-alert-danger d-none mt-3"></div>
+    </section>
+
+    <!-- ══ SECTION: ALL ORDERS / SEARCH ══ -->
+    <section id="section-orders" class="content-section">
+      <div class="section-header">
+        <h2><i class="fa-solid fa-layer-group me-2 text-accent"></i>Orders Management</h2>
+        <p class="text-muted">Search, filter and manage all customer orders.</p>
+      </div>
+
+      <!-- Search Bar -->
+      <div class="pf-card mb-4">
+        <div class="pf-card-body">
+          <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+              <label class="form-label">Search by Name or Phone</label>
+              <div class="input-icon-wrap">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="search-query" class="form-control pf-input" placeholder="Customer name or phone…" />
+              </div>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Filter by Type</label>
+              <select id="filter-type" class="form-select pf-input">
+                <option value="">All Types</option>
+                <option>Stickers</option>
+                <option>Badges</option>
+                <option>Flex</option>
+                <option>Photocopy</option>
+                <option>Business Cards</option>
+                <option>Brochure</option>
+                <option>T-Shirt Print</option>
+                <option>Custom</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Filter by Status</label>
+              <select id="filter-status" class="form-select pf-input">
+                <option value="">All Statuses</option>
+                <option>Pending</option>
+                <option>Designing</option>
+                <option>Printing</option>
+                <option>Completed</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <button id="btn-search" class="btn pf-btn-primary w-100">
+                <i class="fa-solid fa-search me-1"></i> Search
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results Table -->
+      <div class="pf-card">
+        <div class="pf-card-header">
+          <span>Search Results</span>
+          <span class="small text-muted" id="results-count">—</span>
+        </div>
+        <div class="table-responsive">
+          <table class="table pf-table mb-0">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Customer</th>
+                <th>Phone</th>
+                <th>Type</th>
+                <th>Qty</th>
+                <th>Credit (LKR)</th>
+                <th>Status</th>
+                <th>File</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="orders-tbody">
+              <tr>
+                <td colspan="9" class="text-center text-muted py-5">
+                  <i class="fa-solid fa-magnifying-glass fa-2x mb-3 d-block opacity-25"></i>
+                  Use the search bar above to find orders.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SECTION: AI PRICING CALCULATOR ══ -->
+    <section id="section-pricing" class="content-section">
+      <div class="section-header">
+        <h2><i class="fa-solid fa-calculator me-2 text-accent"></i>AI Pricing Calculator</h2>
+        <p class="text-muted">Estimate job costs instantly using smart pricing logic.</p>
+      </div>
+
+      <div class="row g-4">
+        <div class="col-lg-6">
+          <div class="pf-card">
+            <div class="pf-card-header"><span>Job Parameters</span></div>
+            <div class="pf-card-body">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Job Type</label>
+                  <select id="calc-type" class="form-select pf-input" onchange="updatePricingUI()">
+                    <option value="sticker">Stickers (per sqft)</option>
+                    <option value="flex">Flex Banner (per sqft)</option>
+                    <option value="badge">Badges (per unit)</option>
+                    <option value="photocopy">Photocopy (per page)</option>
+                    <option value="business_card">Business Cards (per 100)</option>
+                    <option value="tshirt">T-Shirt Print (per unit)</option>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Material / Quality</label>
+                  <select id="calc-material" class="form-select pf-input">
+                    <option value="1">Economy</option>
+                    <option value="1.3" selected>Standard</option>
+                    <option value="1.7">Premium</option>
+                    <option value="2.2">Ultra Premium</option>
+                  </select>
+                </div>
+                <div class="col-md-4" id="dim-width-wrap">
+                  <label class="form-label">Width (ft)</label>
+                  <input type="number" id="calc-width" class="form-control pf-input" value="2" min="0.1" step="0.1" oninput="calculatePrice()" />
+                </div>
+                <div class="col-md-4" id="dim-height-wrap">
+                  <label class="form-label">Height (ft)</label>
+                  <input type="number" id="calc-height" class="form-control pf-input" value="3" min="0.1" step="0.1" oninput="calculatePrice()" />
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Quantity</label>
+                  <input type="number" id="calc-qty" class="form-control pf-input" value="1" min="1" oninput="calculatePrice()" />
+                </div>
+                <div class="col-12">
+                  <label class="form-label d-flex justify-content-between">
+                    <span>Lamination / Finishing</span>
+                    <div class="form-check form-switch">
+                      <input class="form-check-input" type="checkbox" id="calc-lamination" onchange="calculatePrice()" />
+                    </div>
+                  </label>
+                </div>
+                <div class="col-12">
+                  <label class="form-label d-flex justify-content-between">
+                    <span>Rush Order (+25%)</span>
+                    <div class="form-check form-switch">
+                      <input class="form-check-input" type="checkbox" id="calc-rush" onchange="calculatePrice()" />
+                    </div>
+                  </label>
+                </div>
+                <div class="col-12">
+                  <label class="form-label">Discount (%)</label>
+                  <input type="range" id="calc-discount" class="form-range pf-range" min="0" max="30" value="0" oninput="calculatePrice(); document.getElementById('disc-val').textContent = this.value + '%'" />
+                  <div class="d-flex justify-content-between small text-muted">
+                    <span>0%</span><span id="disc-val">0%</span><span>30%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-6">
+          <div class="pf-card price-result-card">
+            <div class="pf-card-header"><span>Estimated Price</span></div>
+            <div class="pf-card-body text-center py-5">
+              <div class="price-display">
+                <span class="price-currency">LKR</span>
+                <span id="calc-result-price">0.00</span>
+              </div>
+              <div class="mt-3 text-muted small" id="calc-breakdown"></div>
+
+              <hr class="pf-divider my-4" />
+
+              <div class="row text-start g-3" id="calc-details">
+                <div class="col-6">
+                  <div class="calc-detail-box">
+                    <span class="small text-muted">Base Price</span>
+                    <div id="det-base" class="fw-600">LKR 0.00</div>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="calc-detail-box">
+                    <span class="small text-muted">Material Multiplier</span>
+                    <div id="det-material" class="fw-600">1.3x Standard</div>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="calc-detail-box">
+                    <span class="small text-muted">Lamination</span>
+                    <div id="det-lam" class="fw-600">—</div>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="calc-detail-box">
+                    <span class="small text-muted">Rush Surcharge</span>
+                    <div id="det-rush" class="fw-600">—</div>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="calc-detail-box">
+                    <span class="small text-muted">Discount</span>
+                    <div id="det-disc" class="fw-600 text-success">LKR 0.00</div>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="calc-detail-box highlight">
+                    <span class="small text-muted">TOTAL</span>
+                    <div id="det-total" class="fw-700 text-accent">LKR 0.00</div>
+                  </div>
+                </div>
+              </div>
+
+              <button class="btn pf-btn-primary mt-4 w-100" onclick="copyPriceToOrder()">
+                <i class="fa-solid fa-arrow-right me-2"></i>Use This Price in New Order
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pricing Rate Card -->
+      <div class="pf-card mt-4">
+        <div class="pf-card-header"><span><i class="fa-solid fa-table me-2 text-accent"></i>Base Rate Reference Card</span></div>
+        <div class="pf-card-body">
+          <div class="row g-3">
+            <div class="col-md-4 col-lg-2" id="rate-cards"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SECTION: CUSTOMER LEDGER ══ -->
+    <section id="section-ledger" class="content-section">
+      <div class="section-header">
+        <h2><i class="fa-solid fa-book-open me-2 text-accent"></i>Customer Ledger</h2>
+        <p class="text-muted">Track and manage outstanding credit balances for all customers.</p>
+      </div>
+
+      <!-- Summary Row -->
+      <div class="row g-4 mb-4">
+        <div class="col-md-4">
+          <div class="stat-card stat-red">
+            <div class="stat-icon"><i class="fa-solid fa-money-bill-trend-up"></i></div>
+            <div class="stat-val" id="ledger-total-credit">LKR 0</div>
+            <div class="stat-label">Total Outstanding Credit</div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="stat-card stat-amber">
+            <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
+            <div class="stat-val" id="ledger-customers">0</div>
+            <div class="stat-label">Customers with Credit</div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="stat-card stat-green">
+            <div class="stat-icon"><i class="fa-solid fa-circle-check"></i></div>
+            <div class="stat-val" id="ledger-cleared">0</div>
+            <div class="stat-label">Fully Cleared Accounts</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ledger Table -->
+      <div class="pf-card">
+        <div class="pf-card-header">
+          <span>Outstanding Balances</span>
+          <button class="btn pf-btn-outline btn-sm" id="btn-refresh-ledger">
+            <i class="fa-solid fa-arrows-rotate me-1"></i> Refresh
+          </button>
+        </div>
+        <div class="table-responsive">
+          <table class="table pf-table mb-0">
+            <thead>
+              <tr>
+                <th>Customer</th>
+                <th>Phone</th>
+                <th>Orders</th>
+                <th>Total Credit (LKR)</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="ledger-tbody">
+              <tr>
+                <td colspan="6" class="text-center text-muted py-5">
+                  <i class="fa-solid fa-book-open fa-2x mb-3 d-block opacity-25"></i>
+                  Click "Refresh" to load ledger data.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Mark Payment Modal (inline) -->
+      <div class="modal fade" id="paymentModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content pf-modal">
+            <div class="modal-header border-0">
+              <h5 class="modal-title"><i class="fa-solid fa-money-bill me-2 text-accent"></i>Record Payment</h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <p class="text-muted small mb-3">Customer: <strong id="payment-customer-name">—</strong></p>
+              <p class="text-muted small mb-3">Outstanding: <strong id="payment-outstanding" class="text-danger">LKR 0</strong></p>
+              <label class="form-label">Amount Received (LKR)</label>
+              <input type="number" id="payment-amount" class="form-control pf-input" placeholder="0.00" min="0" />
+            </div>
+            <div class="modal-footer border-0">
+              <button type="button" class="btn pf-btn-ghost" data-bs-dismiss="modal">Cancel</button>
+              <button type="button" class="btn pf-btn-primary" id="btn-confirm-payment">
+                <i class="fa-solid fa-check me-2"></i>Confirm Payment
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SECTION: SETTINGS ══ -->
+    <section id="section-settings" class="content-section">
+      <div class="section-header">
+        <h2><i class="fa-solid fa-gear me-2 text-accent"></i>Shop Settings</h2>
+        <p class="text-muted">Manage your shop profile and subscription.</p>
+      </div>
+
+      <div class="row g-4">
+        <div class="col-lg-6">
+          <div class="pf-card">
+            <div class="pf-card-header"><span>Shop Profile</span></div>
+            <div class="pf-card-body">
+              <div class="mb-3">
+                <label class="form-label">Shop Name</label>
+                <input type="text" id="settings-shopname" class="form-control pf-input" placeholder="Your shop name" />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Owner Email</label>
+                <input type="email" id="settings-email" class="form-control pf-input" disabled />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Phone / WhatsApp</label>
+                <input type="tel" id="settings-phone" class="form-control pf-input" placeholder="+94 7X XXX XXXX" />
+              </div>
+              <div class="mb-4">
+                <label class="form-label">Shop Address</label>
+                <textarea id="settings-address" class="form-control pf-input" rows="2" placeholder="Full address"></textarea>
+              </div>
+              <button class="btn pf-btn-primary" id="btn-save-settings">
+                <i class="fa-solid fa-floppy-disk me-2"></i>Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="pf-card">
+            <div class="pf-card-header"><span>Subscription Plan</span></div>
+            <div class="pf-card-body">
+              <div class="tier-plan-card current">
+                <div class="tier-name">FREE PLAN</div>
+                <ul class="tier-features">
+                  <li><i class="fa-solid fa-check text-accent"></i> Up to 50 orders/month</li>
+                  <li><i class="fa-solid fa-check text-accent"></i> 5GB Storage</li>
+                  <li><i class="fa-solid fa-check text-accent"></i> Basic Dashboard</li>
+                  <li><i class="fa-solid fa-xmark text-danger"></i> WhatsApp Alerts</li>
+                  <li><i class="fa-solid fa-xmark text-danger"></i> White Labeling</li>
+                  <li><i class="fa-solid fa-xmark text-danger"></i> Advanced Analytics</li>
+                </ul>
+              </div>
+              <div class="tier-plan-card upgrade mt-3">
+                <div class="tier-name">PRO PLAN — LKR 2,990/mo</div>
+                <ul class="tier-features">
+                  <li><i class="fa-solid fa-check text-accent"></i> Unlimited orders</li>
+                  <li><i class="fa-solid fa-check text-accent"></i> 50GB Storage</li>
+                  <li><i class="fa-solid fa-check text-accent"></i> WhatsApp Alerts</li>
+                  <li><i class="fa-solid fa-check text-accent"></i> White Labeling</li>
+                  <li><i class="fa-solid fa-check text-accent"></i> Advanced Analytics</li>
+                </ul>
+                <button class="btn pf-btn-primary w-100 mt-3">
+                  <i class="fa-solid fa-arrow-up me-2"></i>Upgrade to Pro
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ══ SECTION: STAFF MANAGEMENT ══ -->
+    <section id="section-staff" class="content-section">
+      <div class="section-header">
+        <h2><i class="fa-solid fa-users-gear me-2 text-accent"></i>Staff Management</h2>
+        <p class="text-muted">Add and manage your shop's Designer and Cashier accounts.</p>
+      </div>
+
+      <div class="pf-card mb-4">
+        <div class="pf-card-header"><span><i class="fa-solid fa-shield-halved me-2 text-accent"></i>Role Permissions</span></div>
+        <div class="pf-card-body">
+          <div class="row g-3">
+            <div class="col-md-4"><div class="calc-detail-box">
+              <div class="mb-2" style="color:var(--accent-light);font-weight:700;font-size:12px"><i class="fa-solid fa-crown me-2"></i>OWNER</div>
+              <ul class="tier-features">
+                <li><i class="fa-solid fa-check text-accent"></i> Full access</li>
+                <li><i class="fa-solid fa-check text-accent"></i> Add & manage orders</li>
+                <li><i class="fa-solid fa-check text-accent"></i> All status updates</li>
+                <li><i class="fa-solid fa-check text-accent"></i> Ledger & payments</li>
+                <li><i class="fa-solid fa-check text-accent"></i> Add/remove staff</li>
+              </ul></div></div>
+            <div class="col-md-4"><div class="calc-detail-box">
+              <div class="mb-2" style="color:#c4b5fd;font-weight:700;font-size:12px"><i class="fa-solid fa-pen-ruler me-2"></i>DESIGNER</div>
+              <ul class="tier-features">
+                <li><i class="fa-solid fa-check text-accent"></i> View all orders</li>
+                <li><i class="fa-solid fa-check text-accent"></i> Move status to Designing</li>
+                <li><i class="fa-solid fa-xmark text-danger"></i> Cannot add orders</li>
+                <li><i class="fa-solid fa-xmark text-danger"></i> No Ledger access</li>
+                <li><i class="fa-solid fa-xmark text-danger"></i> Cannot manage staff</li>
+              </ul></div></div>
+            <div class="col-md-4"><div class="calc-detail-box">
+              <div class="mb-2" style="color:var(--cyan);font-weight:700;font-size:12px"><i class="fa-solid fa-cash-register me-2"></i>CASHIER</div>
+              <ul class="tier-features">
+                <li><i class="fa-solid fa-check text-accent"></i> View all orders</li>
+                <li><i class="fa-solid fa-check text-accent"></i> Printing &amp; Completed status</li>
+                <li><i class="fa-solid fa-check text-accent"></i> Ledger &amp; payments</li>
+                <li><i class="fa-solid fa-check text-accent"></i> Generate PDF invoices</li>
+                <li><i class="fa-solid fa-xmark text-danger"></i> Cannot add orders or staff</li>
+              </ul></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pf-card mb-4">
+        <div class="pf-card-header"><span>Add New Staff Member</span></div>
+        <div class="pf-card-body">
+          <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+              <label class="form-label">Full Name</label>
+              <input type="text" id="staff-name" class="form-control pf-input" placeholder="e.g. Kamal Perera" />
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Email Address</label>
+              <input type="email" id="staff-email" class="form-control pf-input" placeholder="staff@yourshop.com" />
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">Password</label>
+              <input type="password" id="staff-password" class="form-control pf-input" placeholder="Min 6 chars" />
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">Role</label>
+              <select id="staff-role" class="form-select pf-input">
+                <option value="">Select Role</option>
+                <option value="designer">Designer</option>
+                <option value="cashier">Cashier</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <button id="btn-add-staff" class="btn pf-btn-primary w-100">
+                <i class="fa-solid fa-user-plus me-2"></i>Add Staff
+              </button>
+            </div>
+          </div>
+          <div id="staff-error" class="alert pf-alert-danger d-none mt-3 py-2 small"></div>
+        </div>
+      </div>
+
+      <div class="pf-card">
+        <div class="pf-card-header">
+          <span>Current Staff Members</span>
+          <button class="btn pf-btn-outline btn-sm" onclick="loadStaffList()">
+            <i class="fa-solid fa-arrows-rotate me-1"></i> Refresh
+          </button>
+        </div>
+        <div class="table-responsive">
+          <table class="table pf-table mb-0">
+            <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody id="staff-tbody">
+              <tr><td colspan="5" class="text-center text-muted py-5">
+                <i class="fa-solid fa-users fa-2x mb-3 d-block opacity-25"></i>No staff added yet.
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div><!-- /#app -->
+
+<!-- ═══════════════════════════════════════════════════
+     STATUS UPDATE MODAL
+═══════════════════════════════════════════════════ -->
+<div class="modal fade" id="statusModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content pf-modal">
+      <div class="modal-header border-0">
+        <h5 class="modal-title"><i class="fa-solid fa-rotate me-2 text-accent"></i>Update Order Status</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted small mb-3">Order for: <strong id="modal-customer-name">—</strong></p>
+        <input type="hidden" id="modal-order-id" />
+        <label class="form-label">New Status</label>
+        <div class="row g-2" id="status-options">
+          <div class="col-6"><button class="btn status-select-btn w-100" data-status="Pending"><i class="fa-regular fa-clock me-2"></i>Pending</button></div>
+          <div class="col-6"><button class="btn status-select-btn w-100" data-status="Designing"><i class="fa-solid fa-pen-ruler me-2"></i>Designing</button></div>
+          <div class="col-6"><button class="btn status-select-btn w-100" data-status="Printing"><i class="fa-solid fa-print me-2"></i>Printing</button></div>
+          <div class="col-6"><button class="btn status-select-btn active w-100" data-status="Completed"><i class="fa-solid fa-check me-2"></i>Completed</button></div>
+        </div>
+        <input type="hidden" id="selected-status" value="Completed" />
+      </div>
+      <div class="modal-footer border-0">
+        <button type="button" class="btn pf-btn-ghost" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn pf-btn-primary" id="btn-confirm-status">
+          <i class="fa-solid fa-save me-2"></i>Update Status
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST NOTIFICATION -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+  <div id="pf-toast" class="toast pf-toast" role="alert">
+    <div class="toast-body d-flex align-items-center gap-2">
+      <i id="toast-icon" class="fa-solid fa-circle-check"></i>
+      <span id="toast-msg">Done!</span>
+    </div>
+  </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<!-- jsPDF — PDF Invoice Generator (Phase 2) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<!-- PayHere — Sri Lankan Payment Gateway (Phase 2) -->
+<!-- <script src="https://www.payhere.lk/lib/payhere.js"></script> -->
+<!-- App JS (type=module for Firebase ESM) -->
+<script type="module" src="app.js"></script>
+</body>
+</html>

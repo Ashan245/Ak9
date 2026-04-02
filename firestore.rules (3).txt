@@ -1,0 +1,229 @@
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║   PrintFlow Pro — firestore.rules  (Phase 2 — RBAC Edition)     ║
+// ║                                                                  ║
+// ║   Multi-Tenant Security + Role-Based Access Control:             ║
+// ║   • Owners → full access to their shop                          ║
+// ║   • Designers → read orders, update status to "Designing" only  ║
+// ║   • Cashiers  → read orders, update status, manage payments      ║
+// ║   • Cross-shop access → IMPOSSIBLE by design                    ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ══════════════════════════════════════════════════════════════
+    //  HELPER FUNCTIONS
+    // ══════════════════════════════════════════════════════════════
+
+    /** Is the user signed in? */
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    /**
+     * Is the signed-in user the owner of this shop?
+     * Owner's UID equals the shop document ID.
+     */
+    function isOwner(shopId) {
+      return isAuth() && request.auth.uid == shopId;
+    }
+
+    /**
+     * Is the signed-in user a staff member of this shop?
+     * Checks: /shops/{shopId}/staff/{uid} exists and is not removed.
+     */
+    function isStaff(shopId) {
+      return isAuth()
+        && exists(/databases/$(database)/documents/shops/$(shopId)/staff/$(request.auth.uid))
+        && get(/databases/$(database)/documents/shops/$(shopId)/staff/$(request.auth.uid)).data.role
+           in ["designer", "cashier"];
+    }
+
+    /**
+     * Get the role of the signed-in staff member in this shop.
+     * Returns null if they are not staff.
+     */
+    function staffRole(shopId) {
+      return isAuth() && exists(/databases/$(database)/documents/shops/$(shopId)/staff/$(request.auth.uid))
+        ? get(/databases/$(database)/documents/shops/$(shopId)/staff/$(request.auth.uid)).data.role
+        : null;
+    }
+
+    /** Is the user either the owner or an active staff member? */
+    function isShopMember(shopId) {
+      return isOwner(shopId) || isStaff(shopId);
+    }
+
+    /**
+     * Validates that a shop profile write only touches allowed fields.
+     * Prevents injection of arbitrary fields.
+     */
+    function isValidShopWrite() {
+      return request.resource.data.keys().hasOnly([
+        'shopName','ownerEmail','ownerUID','subscriptionTier',
+        'phone','address','createdAt','updatedAt'
+      ]);
+    }
+
+    /**
+     * Validates a new order document.
+     * Ensures required fields are present with correct types.
+     */
+    function isValidOrderCreate() {
+      let d = request.resource.data;
+      return d.keys().hasAll(['customerName','phone','orderType','status','createdAt'])
+        && d.customerName is string && d.customerName.size() > 0
+        && d.phone        is string && d.phone.size() > 0
+        && d.orderType    is string
+        && d.status       in ['Pending','Designing','Printing','Completed'];
+    }
+
+    /**
+     * Validates what a DESIGNER can update on an order.
+     * Designers can only move status to "Designing" and touch updatedAt.
+     */
+    function isDesignerStatusUpdate() {
+      let changed = request.resource.data.diff(resource.data).affectedKeys();
+      return changed.hasOnly(['status','updatedAt'])
+        && request.resource.data.status == 'Designing';
+    }
+
+    /**
+     * Validates what a CASHIER can update on an order.
+     * Cashiers can update status (Printing/Completed) and payment fields.
+     */
+    function isCashierUpdate() {
+      let changed = request.resource.data.diff(resource.data).affectedKeys();
+      let allowed = ['status','creditAmount','balanceDue','advancePaid','updatedAt'];
+      return changed.hasOnly(allowed)
+        && (request.resource.data.status == resource.data.status
+            || request.resource.data.status in ['Printing','Completed']);
+    }
+
+    /**
+     * Validates what an OWNER can update on an order.
+     * Owners can update all allowed order fields.
+     */
+    function isOwnerOrderUpdate() {
+      let allowed = [
+        'status','creditAmount','balanceDue','advancePaid',
+        'notes','fileURL','fileName','updatedAt','quantity'
+      ];
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(allowed);
+    }
+
+
+    // ══════════════════════════════════════════════════════════════
+    //  SHOP DOCUMENTS  /shops/{shopId}
+    // ══════════════════════════════════════════════════════════════
+    match /shops/{shopId} {
+
+      // READ: Owner can read their own shop. Staff can read the shop they work for.
+      allow read: if isShopMember(shopId);
+
+      // CREATE: Only the owner can create their own shop document.
+      //         The ownerUID in the doc must match their UID.
+      allow create: if isOwner(shopId)
+                    && isValidShopWrite()
+                    && request.resource.data.ownerUID == request.auth.uid;
+
+      // UPDATE: Only the owner can update shop settings.
+      //         ownerUID and ownerEmail are immutable after creation.
+      allow update: if isOwner(shopId)
+                    && isValidShopWrite()
+                    && request.resource.data.ownerUID   == resource.data.ownerUID
+                    && request.resource.data.ownerEmail == resource.data.ownerEmail;
+
+      // DELETE: Forbidden via client SDK. Use Admin SDK / Cloud Functions only.
+      allow delete: if false;
+
+
+      // ──────────────────────────────────────────────────────────
+      //  ORDERS SUB-COLLECTION  /shops/{shopId}/orders/{orderId}
+      // ──────────────────────────────────────────────────────────
+      match /orders/{orderId} {
+
+        // READ: Any shop member (owner, designer, cashier) can read orders.
+        allow read: if isShopMember(shopId);
+
+        // CREATE: Only the owner can add new orders.
+        allow create: if isOwner(shopId) && isValidOrderCreate();
+
+        // UPDATE: Role-specific update rules:
+        //   Owner   → can update all allowed order fields
+        //   Designer → can ONLY move status to "Designing"
+        //   Cashier  → can update payment fields and move to Printing/Completed
+        allow update: if isOwner(shopId)   && isOwnerOrderUpdate()
+                      || staffRole(shopId) == "designer" && isDesignerStatusUpdate()
+                      || staffRole(shopId) == "cashier"  && isCashierUpdate();
+
+        // DELETE: Only the owner can delete orders.
+        allow delete: if isOwner(shopId);
+      }
+
+
+      // ──────────────────────────────────────────────────────────
+      //  STAFF SUB-COLLECTION  /shops/{shopId}/staff/{staffUID}
+      // ──────────────────────────────────────────────────────────
+      match /staff/{staffUID} {
+
+        // READ: Owner can read all staff. Staff can read their own record.
+        allow read: if isOwner(shopId)
+                    || (isAuth() && request.auth.uid == staffUID);
+
+        // CREATE: Only the owner can add staff members.
+        allow create: if isOwner(shopId)
+                      && request.resource.data.keys().hasOnly([
+                           'name','email','role','shopId','createdAt'
+                         ])
+                      && request.resource.data.role in ['designer','cashier'];
+
+        // UPDATE: Owner can update staff records (e.g., change role, mark removed).
+        allow update: if isOwner(shopId)
+                      && request.resource.data.keys().hasOnly([
+                           'name','email','role','shopId','createdAt','updatedAt'
+                         ]);
+
+        // DELETE: Owner can delete staff records.
+        allow delete: if isOwner(shopId);
+      }
+    }
+
+
+    // ══════════════════════════════════════════════════════════════
+    //  STAFF LOOKUP  /staffLookup/{staffUID}
+    //  Used to resolve which shop a staff member belongs to on login.
+    // ══════════════════════════════════════════════════════════════
+    match /staffLookup/{staffUID} {
+
+      // READ: Staff member can read their own lookup record (to find their shopId).
+      allow read: if isAuth() && request.auth.uid == staffUID;
+
+      // CREATE: Only an owner can create a staff lookup record.
+      //         The shopId must match the owner's own shop.
+      allow create: if isAuth()
+                    && exists(/databases/$(database)/documents/shops/$(request.auth.uid))
+                    && request.resource.data.shopId == request.auth.uid
+                    && request.resource.data.role   in ['designer','cashier'];
+
+      // UPDATE: Not allowed via client SDK.
+      allow update: if false;
+
+      // DELETE: The owner of the shop can remove the lookup record.
+      allow delete: if isAuth()
+                    && get(/databases/$(database)/documents/staffLookup/$(staffUID)).data.shopId
+                       == request.auth.uid;
+    }
+
+
+    // ══════════════════════════════════════════════════════════════
+    //  DEFAULT DENY
+    //  Any path not explicitly matched above is denied.
+    // ══════════════════════════════════════════════════════════════
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
