@@ -34,12 +34,12 @@ import {
 //  SECTION 1 — Firebase Configuration  ← REPLACE WITH YOUR CONFIG
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const firebaseConfig = {
-  apiKey:            "YOUR_API_KEY",
-  authDomain:        "YOUR_PROJECT.firebaseapp.com",
-  projectId:         "YOUR_PROJECT_ID",
-  storageBucket:     "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId:             "YOUR_APP_ID"
+  apiKey:            "AIzaSyD1c0v1GsV1yyrZT5w_eGvd08vQk3rBvqc",
+  authDomain:        "planning-with-ai-123-f72da.firebaseapp.com",
+  projectId:         "planning-with-ai-123-f72da",
+  storageBucket:     "planning-with-ai-123-f72da.firebasestorage.app",
+  messagingSenderId: "732507401545",
+  appId:             "1:732507401545:web:03f94258ea55a8bbeffe98"
 };
 
 const firebaseApp = initializeApp(firebaseConfig);
